@@ -152,7 +152,7 @@ int main() {
   for (int i = 500; i <= 100000; i += 100) {
     sizes.push_back(i);
   }
-  /*// --- Экспериментальные замеры для обычного MergeSort ---
+  // --- Экспериментальные замеры для обычного MergeSort ---
   // тест 1 (случайные массивы)
   std::vector<int> base = ArrayGenerator::genRandom(100000);
   std::ofstream outRandom("merge_sort_random.csv");
@@ -205,7 +205,7 @@ int main() {
     outNearlySorted << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << avg << "\n";
   }
   outNearlySorted.close();
-  std::cout<<"MergeSort nearly sorted done!\n";*/
+  std::cout<<"MergeSort nearly sorted done!\n";
 
   // --- Экспериментальные замеры для MergeInsertionSort ---
   std::vector thresholds = {5, 10, 20, 30, 50};
