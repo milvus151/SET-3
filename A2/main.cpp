@@ -6,8 +6,8 @@
 class ArrayGenerator {
 public:
   static std::vector<int> genRandom(int n) {
-    std::mt19937 gen(std::random_device{}());
-    std::uniform_real_distribution<> dist(0, 10000);
+    std::mt19937 gen(12345);
+    std::uniform_int_distribution<> dist(0, 10000);
     std::vector<int> generated(n);
     for (int i = 0; i < n; i++) {
       generated[i] = dist(gen);
@@ -32,18 +32,17 @@ public:
 
   static std::vector<int> genNearlySorted(int n) {
     std::vector<int> generated = genSorted(n);
-    std::mt19937 gen(std::random_device{}());
-    int swap = n / 25;
-    std::uniform_real_distribution<> dist(0, n - 1);
-    for (int i = 0; i < swap; i++) {
-      int x1 = dist(gen);
-      int x2 = dist(gen);
-      int temp = generated[x2];
-      generated[x2] = generated[x1];
-      generated[x1] = temp;
+    std::mt19937 gen(12345);
+    std::uniform_int_distribution<int> dist(0, n - 2);
+
+    int swaps = n / 25;
+    for (int i = 0; i < swaps; i++) {
+      int pos = dist(gen);
+      std::swap(generated[pos], generated[pos + 1]);
     }
     return generated;
   }
+
   static std::vector<int> getSubArray(const std::vector<int> &baseArray, int exactSize) {
     std::vector<int> result(baseArray.begin(), baseArray.begin() + exactSize);
     return result;
@@ -132,21 +131,24 @@ public:
 
 class SortTester {
 public:
-  static long long measureTimeMISort(std::vector<int> arr, MergeInsertionSort &sorter) {
-    auto start = std::chrono::high_resolution_clock::now();
+  static long long measureTimeMISort(std::vector<int>& arr, MergeInsertionSort &sorter) {
+    using clock = std::chrono::steady_clock;
+    auto start = clock::now();
     sorter.MISort(arr);
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto elapsed = clock::now() - start;
     long long ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
     return ms;
   }
-  static long long measureTimeMergeSort(std::vector<int> arr, MergeSort &sorter) {
-    auto start = std::chrono::high_resolution_clock::now();
+  static long long measureTimeMergeSort(std::vector<int>& arr, MergeSort &sorter) {
+    using clock = std::chrono::steady_clock;
+    auto start = clock::now();
     sorter.sort(arr);
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto elapsed = clock::now() - start;
     long long ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
     return ms;
   }
 };
+
 int main() {
   std::vector<int> sizes;
   for (int i = 500; i <= 100000; i += 100) {
@@ -156,17 +158,22 @@ int main() {
   // тест 1 (случайные массивы)
   std::vector<int> base = ArrayGenerator::genRandom(100000);
   std::ofstream outRandom("merge_sort_random.csv");
-  outRandom << "size;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outRandom << "size;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     std::vector<long long> times;
-    for (int i = 0; i < 3; i++) {
-      std::vector<int> work_mas = ArrayGenerator::getSubArray(base, size);
+    times.reserve(9);
+    std::vector<int> base_copy = ArrayGenerator::getSubArray(base, size);
+    for (int i = 0; i < 9; i++) {
       MergeSort sorter;
+      std::vector<int> work_mas = base_copy;
       long long ms = SortTester::measureTimeMergeSort(work_mas, sorter);
       times.push_back(ms);
     }
-    long long avg = (times[0] + times[1] + times[2]) / 3;
-    outRandom << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << avg << "\n";
+    outRandom << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3] << ";"
+    << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+    std::sort(times.begin(), times.end());
+    long long med = times[4];
+    outRandom << med << "\n";
   }
   outRandom.close();
   std::cout<<"MergeSort random done!\n";
@@ -174,17 +181,22 @@ int main() {
   // тест 2 (отсортированные в обратном порядке массивы)
   std::vector<int> base2 = ArrayGenerator::genReverseSorted(100000);
   std::ofstream outReverseSorted("merge_sort_reversed.csv");
-  outReverseSorted << "size;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outReverseSorted << "size;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     std::vector<long long> times;
-    for (int i = 0; i < 3; i++) {
-      std::vector<int> work_mas = ArrayGenerator::getSubArray(base2, size);
+    times.reserve(9);
+    std::vector<int> base2_copy = ArrayGenerator::getSubArray(base2, size);
+    for (int i = 0; i < 9; i++) {
       MergeSort sorter;
+      std::vector<int> work_mas = base2_copy;
       long long ms = SortTester::measureTimeMergeSort(work_mas, sorter);
       times.push_back(ms);
     }
-    long long avg = (times[0] + times[1] + times[2]) / 3;
-    outReverseSorted << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << avg << "\n";
+    outReverseSorted << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3] << ";"
+    << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+    std::sort(times.begin(), times.end());
+    long long med = times[4];
+    outReverseSorted << med << "\n";
   }
   outReverseSorted.close();
   std::cout<<"MergeSort reverse done!\n";
@@ -192,20 +204,26 @@ int main() {
   // тест 3 ("почти" отсортированные массивы)
   std::vector<int> base3 = ArrayGenerator::genNearlySorted(100000);
   std::ofstream outNearlySorted("merge_sort_nearly_sorted.csv");
-  outNearlySorted << "size;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outNearlySorted << "size;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     std::vector<long long> times;
-    for (int i = 0; i < 3; i++) {
-      std::vector<int> work_mas = ArrayGenerator::getSubArray(base3, size);
+    times.reserve(9);
+    std::vector<int> base3_copy = ArrayGenerator::getSubArray(base3, size);
+    for (int i = 0; i < 9; i++) {
       MergeSort sorter;
+      std::vector<int> work_mas = base3_copy;
       long long ms = SortTester::measureTimeMergeSort(work_mas, sorter);
       times.push_back(ms);
     }
-    long long avg = (times[0] + times[1] + times[2]) / 3;
-    outNearlySorted << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << avg << "\n";
+    outNearlySorted << size << ";" << times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3] << ";"
+    << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+    std::sort(times.begin(), times.end());
+    long long med = times[4];
+    outNearlySorted << med << "\n";
   }
   outNearlySorted.close();
   std::cout<<"MergeSort nearly sorted done!\n";
+
 
   // --- Экспериментальные замеры для MergeInsertionSort ---
   std::vector thresholds = {5, 10, 20, 30, 50};
@@ -213,18 +231,23 @@ int main() {
   // тест 1 (случайные массивы)
   std::vector<int> base4 = ArrayGenerator::genRandom(100000);
   std::ofstream outRandomMI("merge_insertion_sort_random.csv");
-  outRandomMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outRandomMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     for (int threshold: thresholds) {
       std::vector<long long> times;
-      for (int i = 0; i < 3; i++) {
-        std::vector<int> work_mas = ArrayGenerator::getSubArray(base4, size);
+      times.reserve(9);
+      std::vector<int> base4_copy = ArrayGenerator::getSubArray(base4, size);
+      for (int i = 0; i < 9; i++) {
         MergeInsertionSort sorter(threshold);
+        std::vector<int> work_mas = base4_copy;
         long long ms = SortTester::measureTimeMISort(work_mas, sorter);
         times.push_back(ms);
       }
-      long long avg = (times[0] + times[1] + times[2]) / 3;
-      outRandomMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << avg << "\n";
+      outRandomMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3]
+      << ";" << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+      std::sort(times.begin(), times.end());
+      long long med = times[4];
+      outRandomMI  << med << "\n";
     }
   }
   outRandomMI.close();
@@ -233,19 +256,23 @@ int main() {
   // тест 2 (отсортированные в обратном порядке массивы)
   std::vector<int> base5 = ArrayGenerator::genReverseSorted(100000);
   std::ofstream outReverseSortedMI("merge_insertion_sort_reversed.csv");
-  outReverseSortedMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outReverseSortedMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     for (int threshold: thresholds) {
       std::vector<long long> times;
-      for (int i = 0; i < 3; i++) {
-        std::vector<int> work_mas = ArrayGenerator::getSubArray(base5, size);
+      times.reserve(9);
+      std::vector<int> base5_copy = ArrayGenerator::getSubArray(base5, size);
+      for (int i = 0; i < 9; i++) {
         MergeInsertionSort sorter(threshold);
+        std::vector<int> work_mas = base5_copy;
         long long ms = SortTester::measureTimeMISort(work_mas, sorter);
         times.push_back(ms);
       }
-      long long avg = (times[0] + times[1] + times[2]) / 3;
-      outReverseSortedMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << avg
-                         << "\n";
+      outReverseSortedMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3]
+      << ";" << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+      std::sort(times.begin(), times.end());
+      long long med = times[4];
+      outReverseSortedMI  << med << "\n";
     }
   }
   outReverseSortedMI.close();
@@ -254,19 +281,23 @@ int main() {
   // тест 3 ("почти" отсортированные массивы)
   std::vector<int> base6 = ArrayGenerator::genNearlySorted(100000);
   std::ofstream outNearlySortedMI("merge_insertion_sort_nearly_sorted.csv");
-  outNearlySortedMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;average_ms\n";
+  outNearlySortedMI << "size;threshold;time_run1_ms;time_run2_ms;time_run3_ms;time_run4_ms;time_run5_ms;time_run6_ms;time_run7_ms;time_run8_ms;time_run9_ms;med_ms\n";
   for (int size: sizes) {
     for (int threshold: thresholds) {
       std::vector<long long> times;
-      for (int i = 0; i < 3; i++) {
-        std::vector<int> work_mas = ArrayGenerator::getSubArray(base6, size);
+      times.reserve(9);
+      std::vector<int> base6_copy = ArrayGenerator::getSubArray(base6, size);
+      for (int i = 0; i < 9; i++) {
         MergeInsertionSort sorter(threshold);
+        std::vector<int> work_mas = base6_copy;
         long long ms = SortTester::measureTimeMISort(work_mas, sorter);
         times.push_back(ms);
       }
-      long long avg = (times[0] + times[1] + times[2]) / 3;
-      outNearlySortedMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << avg
-                        << "\n";
+      outNearlySortedMI << size << ";" << threshold <<";"<< times[0] << ";" << times[1] << ";" << times[2] << ";" << times[3]
+      << ";" << times[4] << ";" << times[5] << ";" << times[6] << ";" << times[7] << ";" << times[8] << ";";
+      std::sort(times.begin(), times.end());
+      long long med = times[4];
+      outNearlySortedMI  << med << "\n";
     }
   }
   outNearlySortedMI.close();
